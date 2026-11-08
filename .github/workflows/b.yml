@@ -1,0 +1,20 @@
+name: Build
+on: workflow_dispatch
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - run: pip install platformio esptool
+      - run: pio run
+      - run: |
+          B=.pio/build/cyber_box
+          BOOT=$(find ~/.platformio -name boot_app0.bin | head -n1)
+          python -m esptool --chip esp32s3 merge_bin -o cyber-hauptbox-full.bin --flash_mode dio --flash_freq 80m --flash_size 4MB 0x0 $B/bootloader.bin 0x8000 $B/partitions.bin 0xe000 "$BOOT" 0x10000 $B/firmware.bin
+      - uses: actions/upload-artifact@v4
+        with:
+          name: bin
+          path: cyber-hauptbox-full.bin
